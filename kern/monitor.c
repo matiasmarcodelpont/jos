@@ -58,11 +58,14 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	uint32_t ebp = read_ebp(), eip;
-	struct Eipdebuginfo info;
-	debuginfo_eip((uintptr_t)*mon_backtrace, &info);
+		uint32_t ebp = read_ebp(),
+			eip = (uintptr_t)*mon_backtrace,
+			prev_eip;
 
 	while (ebp != 0) {
+		struct Eipdebuginfo info;
+		debuginfo_eip(eip, &info);
+		prev_eip = eip;
 		eip = *(uint32_t*)(ebp + 4);
 		cprintf("  ebp %08x", ebp);
 		cprintf("  eip %08x", eip);
@@ -75,12 +78,11 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		  cprintf(" %08x", 0);
 
 		cprintf(" %s:%d:", info.eip_file, info.eip_line);
-		cprintf(" %.*s+%d", info.eip_fn_namelen, info.eip_fn_name, eip - info.eip_fn_addr);
+		cprintf(" %.*s", info.eip_fn_namelen, info.eip_fn_name);
 
-		cprintf("\n");
+		cprintf("+%d\n", prev_eip - info.eip_fn_addr);
 
 		ebp = *(uint32_t*)ebp;
-		debuginfo_eip(eip, &info);
 	}
 	return 0;
 }
