@@ -152,7 +152,9 @@ mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use
 	// memset
 	// to initialize all fields of each struct PageInfo to 0.
-	// Your code goes here:
+	const size_t pages_size = sizeof(struct PageInfo) * npages;
+	struct PageInfo *pages = boot_alloc(pages_size);
+	memset(pages, 0, pages_size);
 
 
 	//////////////////////////////////////////////////////////////////////
