@@ -14,3 +14,5 @@
 /lab?/
 /sol?/
 /myapi.key
+
+__pycache__
