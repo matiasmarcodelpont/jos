@@ -158,7 +158,7 @@ mem_init(void)
 	// memset
 	// to initialize all fields of each struct PageInfo to 0.
 	const size_t pages_size = sizeof(struct PageInfo) * npages;
-	struct PageInfo *pages = boot_alloc(pages_size);
+	pages = boot_alloc(pages_size);
 	memset(pages, 0, pages_size);
 
 
@@ -266,8 +266,17 @@ page_init(void)
 	size_t i;
 	for (i = 0; i < npages; i++) {
 		pages[i].pp_ref = 0;
-		pages[i].pp_link = page_free_list;
-		page_free_list = &pages[i];
+		physaddr_t page_pa = page2pa(pages + i);
+		if (
+			page_pa == 0 ||
+			(page_pa >= IOPHYSMEM && page_pa < EXTPHYSMEM) ||
+			(page_pa >= EXTPHYSMEM && page_pa < PADDR(boot_alloc(0)))
+		) {
+			pages[i].pp_link = NULL;
+		} else {
+			pages[i].pp_link = page_free_list;
+			page_free_list = &pages[i];
+		}
 	}
 }
 
