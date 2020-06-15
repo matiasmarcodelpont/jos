@@ -361,8 +361,40 @@ page_decref(struct PageInfo *pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	// Fill this function in
-	return NULL;
+	if(!pgdir){
+		return NULL;
+	}
+
+	pde_t pdx=PDX(va);
+	pte_t ptx=PTX(va);
+
+	if(!pgdir[pdx]){
+		if(create)//create == 0 -> false
+			return NULL;
+		else{//create == 1 -> true
+			struct PageInfo* page = page_alloc(ALLOC_ZERO);
+			if(!page){
+				return NULL;
+			}
+			page->pp_ref++;
+			physaddr_t page_pa = page2pa(page);
+
+			pgdir[pdx] = page_pa; // ?
+			pte_t* pte = KADDR(page_pa);
+
+			return pte;
+
+		}
+	//anotaciones de dato
+	/*pgdir[pdx];
+	PTE_ADDR(pgdir[pdx]);
+	pte_t* pte=KADDR(...);*/
+
+	}
+	physaddr_t page_pa = PTE_ADDR(pgdir[pdx]);
+	pte_t* pte=KADDR(page_pa);
+
+	return pte;
 }
 
 //
@@ -410,7 +442,15 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+	
+	pte_t* pte = pgdir_walk(pgdir,va,0);
+	if(pte){
+		page_remove(pgdir,va);
+	}
+	physaddr_t pa = PTE_ADDR(pte);
+	struct PageInfo* page = pa2page(pa);
+
+
 	return 0;
 }
 
@@ -428,8 +468,19 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+	
+	pte_t* pte = pgdir_walk(pgdir,va,0);
+	if(!pte){
+		return NULL;
+	}
+	if(pte_store){
+		pte = *pte_store;
+	}
+	physaddr_t pa = PTE_ADDR(pte);
+	struct PageInfo* page = pa2page(pa);
+
+	return page;
+
 }
 
 //
@@ -450,7 +501,19 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+
+	pte_t* pte = pgdir_walk(pgdir,va,0);
+	if(!pte){
+		return;
+	}
+	physaddr_t pa = PTE_ADDR(pte);
+	struct PageInfo* page = pa2page(pa);
+	//pendiente
+//   - The pg table entry corresponding to 'va' should be set to 0.
+//     (if such a PTE exists)
+	page_decref(page);
+	tlb_invalidate(pgdir,va);
+	
 }
 
 //
