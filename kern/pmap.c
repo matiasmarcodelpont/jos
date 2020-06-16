@@ -361,8 +361,8 @@ page_decref(struct PageInfo *pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	if (!pgdir[PDX(va)]) {
-		if (!create) {
+	if ((pgdir[PDX(va)] & PTE_P) == 0) {
+		if (create == 0) {
 			return NULL;
 		}
 
@@ -372,7 +372,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		}
 		page->pp_ref++;
 
-		pgdir[PDX(va)] = page2pa(page) | PTE_P;
+		pgdir[PDX(va)] = page2pa(page) | PTE_W | PTE_U | PTE_P;
 	}
 
 	pte_t* pte = KADDR(PTE_ADDR(pgdir[PDX(va)]));
@@ -432,10 +432,9 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 		return -E_NO_MEM;
 	}
 
-	physaddr_t pa = PTE_ADDR(*pte);
+	pp->pp_ref++;
 	page_remove(pgdir, va);
 	*pte = page2pa(pp) | perm | PTE_P;
-	pp->pp_ref++;
 	return 0;
 }
 
@@ -457,8 +456,8 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 	if (!pte) {
 		return NULL;
 	}
-	if (*pte_store) {
-		*pte = **pte_store;
+	if (pte_store) {
+		*pte_store = pte;
 	}
 	return pa2page(PTE_ADDR(*pte));
 }
@@ -481,11 +480,11 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	pte_t unmap = 0;
-	pte_t* _unmap = &unmap;
-	struct PageInfo* page = page_lookup(pgdir, va, &_unmap);
+	pte_t* pte;
+	struct PageInfo* page = page_lookup(pgdir, va, &pte);
 	if (page) {
 		page_decref(page);
+		*pte &= ~PTE_P;
 		tlb_invalidate(pgdir, va);
 	}
 }
