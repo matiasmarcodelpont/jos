@@ -103,7 +103,7 @@ boot_alloc(uint32_t n)
 	// Allocate a chunk large enough to hold 'n' bytes, then update
 	// nextfree.  Make sure nextfree is kept aligned
 	// to a multiple of PGSIZE.
-	if (nextfree + n < nextfree) {
+	if (PGNUM(PADDR(nextfree) + n) >= npages || nextfree + n < nextfree) {
 		panic("Out of memory");
 	}
 	result = nextfree;
