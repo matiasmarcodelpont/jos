@@ -481,19 +481,13 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-
-	pte_t* pte = pgdir_walk(pgdir,va,0);
-	if(!pte){
-		return;
+	pte_t unmap = 0;
+	pte_t* _unmap = &unmap;
+	struct PageInfo* page = page_lookup(pgdir, va, &_unmap);
+	if (page) {
+		page_decref(page);
+		tlb_invalidate(pgdir, va);
 	}
-	physaddr_t pa = PTE_ADDR(pte);
-	struct PageInfo* page = pa2page(pa);
-	//pendiente
-//   - The pg table entry corresponding to 'va' should be set to 0.
-//     (if such a PTE exists)
-	page_decref(page);
-	tlb_invalidate(pgdir,va);
-	
 }
 
 //
