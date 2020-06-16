@@ -361,40 +361,22 @@ page_decref(struct PageInfo *pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	if(!pgdir){
-		return NULL;
-	}
-
-	pde_t pdx=PDX(va);
-	pte_t ptx=PTX(va);
-
-	if(!pgdir[pdx]){
-		if(create)//create == 0 -> false
+	if (!pgdir[PDX(va)]) {
+		if (!create) {
 			return NULL;
-		else{//create == 1 -> true
-			struct PageInfo* page = page_alloc(ALLOC_ZERO);
-			if(!page){
-				return NULL;
-			}
-			page->pp_ref++;
-			physaddr_t page_pa = page2pa(page);
-
-			pgdir[pdx] = page_pa; // ?
-			pte_t* pte = KADDR(page_pa);
-
-			return pte;
-
 		}
-	//anotaciones de dato
-	/*pgdir[pdx];
-	PTE_ADDR(pgdir[pdx]);
-	pte_t* pte=KADDR(...);*/
 
+		struct PageInfo* page = page_alloc(ALLOC_ZERO);
+		if (!page) {
+			return NULL;
+		}
+		page->pp_ref++;
+
+		pgdir[PDX(va)] = page2pa(page) | PTE_P;
 	}
-	physaddr_t page_pa = PTE_ADDR(pgdir[pdx]);
-	pte_t* pte=KADDR(page_pa);
 
-	return pte;
+	pte_t* pte = KADDR(PTE_ADDR(pgdir[PDX(va)]));
+	return &pte[PTX(va)];
 }
 
 //
