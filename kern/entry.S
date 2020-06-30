@@ -53,6 +53,10 @@ entry:
 	# sufficient until we set up our real page table in mem_init
 	# in lab 2.
 
+	# Turn on large pages.
+	movl	%cr4, %eax
+	orl	$(CR4_PSE), %eax
+	movl	%eax, %cr4
 	# Load the physical address of entry_pgdir into cr3.  entry_pgdir
 	# is defined in entrypgdir.c.
 	movl	$(RELOC(entry_pgdir)), %eax
