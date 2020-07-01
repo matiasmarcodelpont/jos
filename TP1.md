@@ -43,4 +43,11 @@ page2pa devuelve la physical address asociada a una struct PageInfo.
 page2kva devuelve la virtual adress del kernel asociada a una physical address, que a su vez esta asociada a una struct PageInfo.
 ...
 
+map_region_large
+----------------
+Responder: ¿cuánta memoria se ahorró de este modo? ¿Es una cantidad fija, o depende de la memoria física de la computadora?
 
+Se ahorra xactamente una pagina (4KiB) por cada large page (4MiB) que se aloca.
+En el caso puntual de boot_map_region, va a depender de la memoria fisica de la computadora, ya que se mapea el array `PageInfo* pages`, cuyo tamaño depende de la memoria fisica de la computadora.
+Luego se mappea el stack, que solo ocupa 8 paginas, entonces no se usan large pages.
+Por ultimo se mappean los 256MiB usados por el kernel, en donde entran 64 large pages. Entonces se ahorran 64 * 4096B = 256KiB.
