@@ -414,14 +414,13 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 #else
 	size_t mapped = 0;
 	while (mapped < size) {
-		if ((va + mapped) << 10 == 0 && (pa + mapped) << 10 == 0 && size - mapped >= PTSIZE) {
-			*pgdir = (pa + mapped) | perm | PTE_PS | PTE_P;
+		if (!((va + mapped) & (PTSIZE - 0x1)) && !((pa + mapped) & (PTSIZE - 0x1)) && size - mapped >= PTSIZE) {
+			pgdir[PDX(va + mapped)] = (pa + mapped) | perm | PTE_PS | PTE_P;
 			mapped += PTSIZE;
 		} else {
 			boot_map(pgdir, va + mapped, pa + mapped, perm);
 			mapped += PGSIZE;
 		}
-		// boot_map_region(pgdir, va + mapped, size - mapped, pa + mapped, perm);
 	}
 #endif
 }
