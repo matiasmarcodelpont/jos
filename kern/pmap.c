@@ -212,7 +212,7 @@ mem_init(void)
 	// We might not have 2^32 - KERNBASE bytes of physical memory, but
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
-	boot_map_region(kern_pgdir, KERNBASE, 0x10000000, 0, PTE_W);
+	boot_map_region(kern_pgdir, KERNBASE, -KERNBASE, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -389,7 +389,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map(pde_t *pgdir, uintptr_t va, physaddr_t pa, int perm)
 {
-	pte_t *pte = pgdir_walk(pgdir, (void*)va, 1);
+	pte_t *pte = pgdir_walk(pgdir, (void *) va, 1);
 	*pte = pa | perm | PTE_P;
 }
 
@@ -414,8 +414,11 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 #else
 	size_t mapped = 0;
 	while (mapped < size) {
-		if (!((va + mapped) & (PTSIZE - 0x1)) && !((pa + mapped) & (PTSIZE - 0x1)) && size - mapped >= PTSIZE) {
-			pgdir[PDX(va + mapped)] = (pa + mapped) | perm | PTE_PS | PTE_P;
+		if (!((va + mapped) & (PTSIZE - 0x1)) &&
+		    !((pa + mapped) & (PTSIZE - 0x1)) &&
+				size - mapped >= PTSIZE) {
+			pgdir[PDX(va + mapped)] =
+			        (pa + mapped) | perm | PTE_PS | PTE_P;
 			mapped += PTSIZE;
 		} else {
 			boot_map(pgdir, va + mapped, pa + mapped, perm);
