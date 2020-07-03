@@ -165,7 +165,9 @@ mem_init(void)
 
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
-	// LAB 3: Your code here.
+	const size_t envs_size = sizeof(struct Env) * NENV;
+	envs = boot_alloc(envs_size);
+	memset(envs, 0, envs_size);
 
 	//////////////////////////////////////////////////////////////////////
 	// Now that we've allocated the initial kernel data structures, we set
@@ -188,11 +190,7 @@ mem_init(void)
 	//    - the new image at UPAGES -- kernel R, user R
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
-	boot_map_region(kern_pgdir,
-	                UPAGES,
-	                npages * sizeof(struct PageInfo),
-	                PADDR(pages),
-	                PTE_U | PTE_P);
+	boot_map_region(kern_pgdir, UPAGES, pages_size, PADDR(pages), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
@@ -200,7 +198,7 @@ mem_init(void)
 	// Permissions:
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
-	// LAB 3: Your code here.
+	boot_map_region(kern_pgdir, UENVS, envs_size, PADDR(envs), PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -428,8 +426,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 	size_t mapped = 0;
 	while (mapped < size) {
 		if (!((va + mapped) & (PTSIZE - 0x1)) &&
-		    !((pa + mapped) & (PTSIZE - 0x1)) &&
-				size - mapped >= PTSIZE) {
+		    !((pa + mapped) & (PTSIZE - 0x1)) && size - mapped >= PTSIZE) {
 			pgdir[PDX(va + mapped)] =
 			        (pa + mapped) | perm | PTE_PS | PTE_P;
 			mapped += PTSIZE;
