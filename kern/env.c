@@ -180,7 +180,7 @@ env_setup_vm(struct Env *e)
 	//	pp_ref for env_free to work correctly.
 	//    - The functions in kern/pmap.h are handy.
 	p->pp_ref++;
-	e->env_pgdir = page2va(p);
+	e->env_pgdir = page2kva(p);
 	memcpy(e->env_pgdir, kern_pgdir, PGSIZE);
 
 	// UVPT maps the env's own page table read-only.
@@ -263,13 +263,18 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 static void
 region_alloc(struct Env *e, void *va, size_t len)
 {
-	// LAB 3: Your code here.
-	// (But only if you need it for load_icode.)
-	//
 	// Hint: It is easier to use region_alloc if the caller can pass
 	//   'va' and 'len' values that are not page-aligned.
 	//   You should round va down, and round (va + len) up.
 	//   (Watch out for corner-cases!)
+	for (void *i = ROUNDDOWN(va, PGSIZE); i < ROUNDUP(va + len, PGSIZE);
+	     i += PGSIZE) {
+		struct PageInfo *pp = page_alloc(0);
+		if (!pp) {
+			panic("page_alloc failed while trying to alloc memory for env");
+		}
+		page_insert(e->env_pgdir, page_alloc(0), va, PTE_W | PTE_U);
+	}
 }
 
 //
