@@ -271,7 +271,8 @@ region_alloc(struct Env *e, void *va, size_t len)
 	     i += PGSIZE) {
 		struct PageInfo *pp = page_alloc(0);
 		if (!pp) {
-			panic("page_alloc failed while trying to alloc memory for env");
+			panic("page_alloc failed while trying to alloc memory "
+			      "for env");
 		}
 		page_insert(e->env_pgdir, page_alloc(0), va, PTE_W | PTE_U);
 	}
