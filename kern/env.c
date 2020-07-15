@@ -113,7 +113,7 @@ env_init(void)
 {
 	// Set up envs array
 	env_free_list = NULL;
-	for (int i = NENV - 1; i <= 0; i--) {
+	for (int i = NENV - 1; i >= 0; i--) {
 		envs[i].env_id = 0;
 		envs[i].env_link = env_free_list;
 		env_free_list = &envs[i];
@@ -274,7 +274,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 			panic("page_alloc failed while trying to alloc memory "
 			      "for env");
 		}
-		page_insert(e->env_pgdir, page_alloc(0), va, PTE_W | PTE_U);
+		page_insert(e->env_pgdir, pp, i, PTE_W | PTE_U);
 	}
 }
 
@@ -334,18 +334,22 @@ load_icode(struct Env *e, uint8_t *binary)
 	if (elf->e_magic != ELF_MAGIC)
 		panic("load_icode faild. Bad elf");
 
+	struct Proghdr *ph = (struct Proghdr *) (binary + elf->e_phoff);
+
+	for (int i = 0; i < elf->e_phnum; i++)
+		if (ph[i].p_type == ELF_PROG_LOAD)
+			region_alloc(e, (void *) ph[i].p_va, ph[i].p_memsz);
+
 	lcr3(PADDR(e->env_pgdir));
 
-	struct Proghdr *ph = (struct Proghdr *) (binary + elf->e_phoff);
 	for (int i = 0; i < elf->e_phnum; i++)
 		if (ph[i].p_type == ELF_PROG_LOAD) {
-			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
-			memcpy((void *) ph->p_va,
-			       binary + ph->p_offset,
-			       ph->p_filesz);
-			memset((void *) (ph->p_va + ph->p_filesz),
+			memcpy((void *) ph[i].p_va,
+			       binary + ph[i].p_offset,
+			       ph[i].p_filesz);
+			memset((void *) (ph[i].p_va + ph[i].p_filesz),
 			       0,
-			       ph->p_memsz - ph->p_filesz);
+			       ph[i].p_memsz - ph[i].p_filesz);
 		}
 
 	lcr3(PADDR(kern_pgdir));
@@ -503,7 +507,7 @@ env_run(struct Env *e)
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
-	lcr3((uint32_t)(curenv->env_pgdir));
+	lcr3(PADDR(curenv->env_pgdir));
 
 	env_pop_tf(&curenv->env_tf);
 }
