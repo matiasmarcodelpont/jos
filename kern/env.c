@@ -339,9 +339,11 @@ load_icode(struct Env *e, uint8_t *binary)
 	struct Proghdr *ph = (struct Proghdr *) (binary + elf->e_phoff);
 	for (int i = 0; i < elf->e_phnum; i++)
 		if (ph[i].p_type == ELF_PROG_LOAD) {
-			region_alloc(e, ph->p_va, ph->p_memsz);
-			memcpy(ph->p_va, binary + ph->p_offset, ph->p_filesz);
-			memset(ph->p_va + ph->p_filesz,
+			region_alloc(e, (void *) ph->p_va, ph->p_memsz);
+			memcpy((void *) ph->p_va,
+			       binary + ph->p_offset,
+			       ph->p_filesz);
+			memset((void *) (ph->p_va + ph->p_filesz),
 			       0,
 			       ph->p_memsz - ph->p_filesz);
 		}
@@ -354,7 +356,8 @@ load_icode(struct Env *e, uint8_t *binary)
 	// at virtual address USTACKTOP - PGSIZE.
 
 	struct PageInfo *pp = page_alloc(0);
-	int err = page_insert(e->env_pgdir, pp, USTACKTOP - PGSIZE, PTE_W | PTE_U);
+	int err = page_insert(
+	        e->env_pgdir, pp, (void *) (USTACKTOP - PGSIZE), PTE_W | PTE_U);
 	if (err < 0)
 		panic("load_icode %e", err);
 
@@ -500,7 +503,7 @@ env_run(struct Env *e)
 	curenv = e;
 	curenv->env_status = ENV_RUNNING;
 	curenv->env_runs++;
-	lcr3(curenv->env_pgdir);
+	lcr3((uint32_t)(curenv->env_pgdir));
 
 	env_pop_tf(&curenv->env_tf);
 }
