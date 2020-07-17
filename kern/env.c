@@ -364,8 +364,6 @@ load_icode(struct Env *e, uint8_t *binary)
 	        e->env_pgdir, pp, (void *) (USTACKTOP - PGSIZE), PTE_W | PTE_U);
 	if (err < 0)
 		panic("load_icode %e", err);
-
-	e->env_tf.tf_eip = USTACKTOP - PGSIZE;
 }
 
 //
