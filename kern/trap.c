@@ -57,13 +57,56 @@ trapname(int trapno)
 	return "(unknown trap)";
 }
 
+void trap_0(void);
+void trap_1(void);
+void trap_2(void);
+void trap_3(void);
+void trap_4(void);
+void trap_5(void);
+void trap_6(void);
+void trap_7(void);
+void trap_8(void);
+void trap_9(void);
+void trap_10(void);
+void trap_11(void);
+void trap_12(void);
+void trap_13(void);
+void trap_14(void);
+void trap_16(void);
+void trap_17(void);
+void trap_18(void);
+void trap_19(void);
+void trap_20(void);
+void trap_21(void);
+void trap_48(void);
 
 void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	// LAB 3: Your code here.
+	SETGATE(idt[0], 0, GD_KT, &trap_0, 0);
+	SETGATE(idt[1], 0, GD_KT, &trap_1, 0);
+	SETGATE(idt[2], 0, GD_KT, &trap_2, 0);
+	SETGATE(idt[3], 0, GD_KT, &trap_3, 3);
+	SETGATE(idt[4], 0, GD_KT, &trap_4, 0);
+	SETGATE(idt[5], 0, GD_KT, &trap_5, 0);
+	SETGATE(idt[6], 0, GD_KT, &trap_6, 0);
+	SETGATE(idt[7], 0, GD_KT, &trap_7, 0);
+	SETGATE(idt[8], 0, GD_KT, &trap_8, 0);
+	SETGATE(idt[9], 0, GD_KT, &trap_9, 0);
+	SETGATE(idt[10], 0, GD_KT, &trap_10, 0);
+	SETGATE(idt[11], 0, GD_KT, &trap_11, 0);
+	SETGATE(idt[12], 0, GD_KT, &trap_12, 0);
+	SETGATE(idt[13], 0, GD_KT, &trap_13, 0);
+	SETGATE(idt[14], 0, GD_KT, &trap_14, 0);
+	SETGATE(idt[16], 0, GD_KT, &trap_16, 0);
+	SETGATE(idt[17], 0, GD_KT, &trap_17, 0);
+	SETGATE(idt[18], 0, GD_KT, &trap_18, 0);
+	SETGATE(idt[19], 0, GD_KT, &trap_19, 0);
+	SETGATE(idt[20], 0, GD_KT, &trap_20, 0);
+	SETGATE(idt[21], 0, GD_KT, &trap_21, 0);
+	SETGATE(idt[48], 0, GD_KT, &trap_48, 3);
 
 	// Per-CPU setup
 	trap_init_percpu();
