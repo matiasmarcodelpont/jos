@@ -73,7 +73,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_cgetc:
 		return sys_cgetc();
 	case SYS_cputs:
-		user_mem_assert(curenv, (void*)a1, a2, 0);
+		user_mem_assert(curenv, (void *) a1, a2, 0);
 		sys_cputs((char *) a1, (size_t) a2);
 		return 0;
 	case SYS_env_destroy:

@@ -564,30 +564,17 @@ static uintptr_t user_mem_check_addr;
 int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
-	uint32_t u_va = (uint32_t) va;
-
-    for (uintptr_t i = (uintptr_t) ROUNDDOWN(va, PGSIZE); i < (uint32_t) ROUNDUP(va + len,PGSIZE); i += PGSIZE) {
-        if (i + PGSIZE > ULIM) {
-            if (i < u_va) {
-                user_mem_check_addr = u_va;
-            }
-			else {
-                user_mem_check_addr = i;
-            }
-            return -E_FAULT;
-        }
-        pte_t *pte = pgdir_walk(env->env_pgdir, (void *) i, false);
-        if (!pte || (*pte & perm) == 0) {
-            if (i < u_va) {
-                user_mem_check_addr = u_va;
-            }
-			else {
-                user_mem_check_addr = i;
-            }
-            return -E_FAULT;
-        }
-    }
-    return 0;
+	pte_t *pte;
+	for (const void *i = ROUNDDOWN(va, PGSIZE); i < ROUNDUP(va + len, PGSIZE);
+	     i += PGSIZE) {
+		if (i >= (void *) ULIM ||
+		    !(pte = pgdir_walk(env->env_pgdir, (void *) i, false)) ||
+		    (*pte & perm) == 0) {
+			user_mem_check_addr = (uint32_t) MAX(va, i);
+			return -E_FAULT;
+		}
+	}
+	return 0;
 }
 
 //
