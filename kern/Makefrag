@@ -41,6 +41,7 @@ KERN_BINFILES :=	user/hello \
 			user/buggyhello \
 			user/buggyhello2 \
 			user/evilhello \
+			user/superevilhello \
 			user/testbss \
 			user/divzero \
 			user/breakpoint \

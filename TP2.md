@@ -138,3 +138,12 @@ Estas instrucciones ponen ciertos valores en los registros de proposito general,
 En la primera, el valor de *($ebp + 0x8) es 13, que es el numero de syscall que se quiere ejecutar.
 
 Los siguientes valores son todos 0.
+
+user_evilhello
+--------------
+
+Es distinto, ya que copia el char que lee de la memoria del kernel, e intenta imprimir el char que fue copiado al segmento de datos del usuario.
+
+Con este mecanismo, cuando se ejecuta la syscall, y luego el chequeo de memoria, la direccion de memoria es una direccion del segmento de datos del usuario, por lo tanto el kernel no sospecharia nada.
+
+Sin embargo, al intentar ejecutarlo se produce un page fault. Esto pasa porque las paginas mapeadas al codigo del kernel no tienen permisos de lectura para el usuario. Entonces es el procesador el que hace este chequeo de proteccion, y no hay un problema de seguridad.
