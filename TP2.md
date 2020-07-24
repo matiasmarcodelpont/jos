@@ -10,7 +10,13 @@ env_alloc
 env_init_percpu
 ---------------
 
-...
+¿Cuántos bytes escribe la función lgdt, y dónde?
+
+- La funcion escribe 8 bytes (un puntero), en el GDT Register: un registro especial que define los segmentos de memoria del procesador.
+
+¿Qué representan esos bytes?
+
+- Un puntero a 6 bytes de memoria, que define la Global Descriptor Table deseada.
 
 
 env_pop_tf
