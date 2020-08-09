@@ -328,6 +328,8 @@ page_init(void)
 		if (page_pa == 0 || page_pa == MPENTRY_PADDR ||
 		    (page_pa >= IOPHYSMEM && page_pa < EXTPHYSMEM) ||
 		    (page_pa >= EXTPHYSMEM && page_pa < PADDR(boot_alloc(0)))) {
+				_Static_assert(MPENTRY_PADDR % PGSIZE == 0,
+			"MPENTRY_PADDR is not page-aligned");
 			pages[i].pp_link = NULL;
 		} else {
 			pages[i].pp_link = page_free_list;
@@ -611,6 +613,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
+	size_t rounded_size = ROUNDUP(size,PGSIZE);
+	if((base+rounded_size)>MMIOLIM){
+		panic("mapping would exceed MMIOLIM");
+	}
+	boot_map_region(kern_pgdir, base, rounded_size, pa, PTE_PCD | PTE_PWT | PTE_W );
+	base = base + rounded_size;
+	return base;
 	panic("mmio_map_region not implemented");
 }
 
