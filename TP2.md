@@ -4,6 +4,22 @@ TP2: Procesos de usuario
 env_alloc
 ---------
 
+¿Qué identificadores se asignan a los primeros 5 procesos creados? (Usar base hexadecimal.)
+
+- 0x00001000
+- 0x00001001
+- 0x00001002
+- 0x00001003
+- 0x00001004
+
+Supongamos que al arrancar el kernel se lanzan NENV procesos a ejecución. A continuación se destruye el proceso asociado a envs[630] y se lanza un proceso que cada segundo muere y se vuelve a lanzar. ¿Qué identificadores tendrá este proceso en sus sus primeras cinco ejecuciones?
+
+- 0x00002276
+- 0x00003276
+- 0x00004276
+- 0x00005276
+- 0x00006276
+
 ...
 
 
@@ -18,12 +34,24 @@ env_init_percpu
 
 - Un puntero a 6 bytes de memoria, que define la Global Descriptor Table deseada.
 
+...
+
 
 env_pop_tf
 ----------
 
-...
+Dada la secuencia de instrucciones assembly en la función, describir qué contiene durante su ejecución:
+el tope de la pila justo antes popal
+- el stack contiene el primer registro de tf (y %esp apunta a tf).
+el tope de la pila justo antes iret
+- el tope de la pila antes de iret es tf_eip.
+el tercer elemento de la pila justo antes de iret
+- el tercer elemento de la pila antes de iret es tf_esp.
 
+¿Cómo determina la CPU (en x86) si hay un cambio de ring (nivel de privilegio)? Ayuda: Responder antes en qué lugar exacto guarda x86 el nivel de privilegio actual. ¿Cuántos bits almacenan ese privilegio?
+
+- los guarda en dos bits (12 y 13) del registro FLAGS (que contiene el estado actual del procesador).
+- se compara los 2 bits menos significativos del valor de code segment que se acaba de popear con los bits del registro FLAGS. si fueran distintos hubo un cambio en el nivel de privilegios.
 
 gdb_hello
 ---------
