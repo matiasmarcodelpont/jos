@@ -325,7 +325,7 @@ page_init(void)
 	for (i = 0; i < npages; i++) {
 		pages[i].pp_ref = 0;
 		physaddr_t page_pa = page2pa(pages + i);
-		if (page_pa == 0 ||
+		if (page_pa == 0 || page_pa == MPENTRY_PADDR ||
 		    (page_pa >= IOPHYSMEM && page_pa < EXTPHYSMEM) ||
 		    (page_pa >= EXTPHYSMEM && page_pa < PADDR(boot_alloc(0)))) {
 			pages[i].pp_link = NULL;
