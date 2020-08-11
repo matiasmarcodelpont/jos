@@ -29,25 +29,58 @@ $ make gdb
 (gdb) watch mpentry_kstack
 Hardware watchpoint 1: mpentry_kstack
 (gdb) continue
-...
+Continuing.
+The target architecture is assumed to be i386
+=> 0xf0100174 <boot_aps+92>:    mov    %esi,%ecx
+
+Thread 1 hit Hardware watchpoint 1: mpentry_kstack
+
+Old value = (void *) 0x0
+New value = (void *) 0xf0255000 <percpu_kstacks+65536>
+boot_aps () at kern/init.c:109
+109                     lapic_startap(c->cpu_id, PADDR(code));
 (gdb) bt
-...
+#0  boot_aps () at kern/init.c:109
+#1  0xf010022a in i386_init () at kern/init.c:55
+#2  0xf0105ee6 in ?? ()
+#3  0xf0100047 in entry () at kern/entry.S:86
 (gdb) info threads
-...
+  Id   Target Id                    Frame
+* 1    Thread 1.1 (CPU#0 [running]) boot_aps () at kern/init.c:109
+  2    Thread 1.2 (CPU#1 [halted ]) 0x000fd0ae in ?? ()
+  3    Thread 1.3 (CPU#2 [halted ]) 0x000fd0ae in ?? ()
+  4    Thread 1.4 (CPU#3 [halted ]) 0x000fd0ae in ?? ()
 (gdb) continue
-...
+Continuing.
+=> 0xf0100174 <boot_aps+92>:    mov    %esi,%ecx
+
+Thread 1 hit Hardware watchpoint 1: mpentry_kstack
+
+Old value = (void *) 0xf0255000 <percpu_kstacks+65536>
+New value = (void *) 0xf025d000 <percpu_kstacks+98304>
+boot_aps () at kern/init.c:109
+109                     lapic_startap(c->cpu_id, PADDR(code));
 (gdb) info threads
-...
+  Id   Target Id                    Frame
+* 1    Thread 1.1 (CPU#0 [running]) boot_aps () at kern/init.c:109
+  2    Thread 1.2 (CPU#1 [running]) spin_lock (lk=0x0) at kern/spinlock.c:71
+  3    Thread 1.3 (CPU#2 [halted ]) 0x000fd0ae in ?? ()
+  4    Thread 1.4 (CPU#3 [halted ]) 0x000fd0ae in ?? ()
 (gdb) thread 2
-...
+[Switching to thread 2 (Thread 1.2)]
+#0  spin_lock (lk=0x0) at kern/spinlock.c:71
+71              while (xchg(&lk->locked, 1) != 0)
 (gdb) bt
-...
+#0  spin_lock (lk=0x0) at kern/spinlock.c:71
+#1  0x00000000 in ?? ()
 (gdb) p cpunum()
-...
+$1 = 1
 (gdb) thread 1
-...
+[Switching to thread 1 (Thread 1.1)]
+#0  boot_aps () at kern/init.c:111
+111                     while(c->cpu_status != CPU_STARTED)
 (gdb) p cpunum()
-...
+$2 = 0
 (gdb) continue
 ```
 
@@ -74,4 +107,17 @@ $ nm obj/kern/kernel | grep mpentry_start
 f01052a0 T mpentry_start
 ```
 
-No solo es una direccion virtual, cuando al momento de ejecutarse esta instruccion, la memoria cirtual no esta activada, si no que ademas el codigo ubicado aqui se copia a la direccion fisica `MPENTRY_PADDR` (0x7000). Por eso un una ejecucion de gdb no se va a detener si se pone un breakpoint en este simbolo.
+No solo es una direccion virtual, cuando al momento de ejecutarse esta instruccion, la memoria virtual no esta activada, si no que ademas el codigo ubicado aqui se copia a la direccion fisica `MPENTRY_PADDR` (0x7000). Por eso un una ejecucion de gdb no se va a detener si se pone un breakpoint en este simbolo.
+
+5. Con GDB, mostrar el valor exacto de %eip y mpentry_kstack cuando se ejecuta la instrucción anterior en el último AP. Se recomienda usar, por ejemplo:
+
+Al momento de ejecutar la instruccion
+```S
+movl $(RELOC(entry_pgdir)), %eax
+```
+- eip: 0x703b
+- mpentry_kstack: 0x0
+
+y luego de activar memoria virtual:
+- eip: 0x704e
+- mpentry_kstack: 0xf0265000 <percpu_kstacks+131072>
