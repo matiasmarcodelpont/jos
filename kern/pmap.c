@@ -280,7 +280,7 @@ mem_init_mp(void)
 	
 	for(int i=0; i<NCPU;i++) {
 		uint32_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
-		boot_map_region(kern_pgdir, kstacktop_i, KSTKSIZE, PADDR(bootstack), PTE_W);
+		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
 	}
 
 }
@@ -618,8 +618,8 @@ mmio_map_region(physaddr_t pa, size_t size)
 		panic("mapping would exceed MMIOLIM");
 	}
 	boot_map_region(kern_pgdir, base, rounded_size, pa, PTE_PCD | PTE_PWT | PTE_W );
-	base = base + rounded_size;
-	return base;
+	base += rounded_size;
+	return (void* ) (base - rounded_size);
 	panic("mmio_map_region not implemented");
 }
 
