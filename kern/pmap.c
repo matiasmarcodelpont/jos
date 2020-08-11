@@ -275,14 +275,14 @@ mem_init_mp(void)
 	//             it will fault rather than overwrite another CPU's stack.
 	//             Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
-	//
-	// LAB 4: Your code here:
-	
-	for(int i=0; i<NCPU;i++) {
+	for (int i = 0; i < NCPU; i++) {
 		uint32_t kstacktop_i = KSTACKTOP - i * (KSTKSIZE + KSTKGAP);
-		boot_map_region(kern_pgdir, kstacktop_i - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
+		boot_map_region(kern_pgdir,
+		                kstacktop_i - KSTKSIZE,
+		                KSTKSIZE,
+		                PADDR(percpu_kstacks[i]),
+		                PTE_W);
 	}
-
 }
 
 // --------------------------------------------------------------
@@ -321,6 +321,9 @@ page_init(void)
 	// Change the code to reflect this.
 	// NB: DO NOT actually touch the physical memory corresponding to
 	// free pages!
+	_Static_assert(MPENTRY_PADDR % PGSIZE == 0,
+	               "MPENTRY_PADDR is not page-aligned");
+
 	size_t i;
 	for (i = 0; i < npages; i++) {
 		pages[i].pp_ref = 0;
@@ -328,8 +331,6 @@ page_init(void)
 		if (page_pa == 0 || page_pa == MPENTRY_PADDR ||
 		    (page_pa >= IOPHYSMEM && page_pa < EXTPHYSMEM) ||
 		    (page_pa >= EXTPHYSMEM && page_pa < PADDR(boot_alloc(0)))) {
-				_Static_assert(MPENTRY_PADDR % PGSIZE == 0,
-			"MPENTRY_PADDR is not page-aligned");
 			pages[i].pp_link = NULL;
 		} else {
 			pages[i].pp_link = page_free_list;
@@ -611,16 +612,14 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// okay to simply panic if this happens).
 	//
 	// Hint: The staff solution uses boot_map_region.
-	//
-	// Your code here:
-	size_t rounded_size = ROUNDUP(size,PGSIZE);
-	if((base+rounded_size)>MMIOLIM){
+	size_t rounded_size = ROUNDUP(size, PGSIZE);
+	if ((base + rounded_size) >= MMIOLIM) {
 		panic("mapping would exceed MMIOLIM");
 	}
-	boot_map_region(kern_pgdir, base, rounded_size, pa, PTE_PCD | PTE_PWT | PTE_W );
+	boot_map_region(
+	        kern_pgdir, base, rounded_size, pa, PTE_PCD | PTE_PWT | PTE_W);
 	base += rounded_size;
-	return (void* ) (base - rounded_size);
-	panic("mmio_map_region not implemented");
+	return (void *) (base - rounded_size);
 }
 
 static uintptr_t user_mem_check_addr;
