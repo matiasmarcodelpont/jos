@@ -1,6 +1,30 @@
 TP3: Multitarea con desalojo
 ============================
 
+env_return
+----------
+
+1. al terminar un proceso su función umain() ¿dónde retoma la ejecución el kernel? Describir la secuencia de llamadas desde que termina umain() hasta que el kernel dispone del proceso.
+
+Al terminar un proceso, la "clib" de jos llama a la sycall env_destroy. (Si esto no se hiciera probablemente terminaria en un page fault).
+Al llamar esta syscall, el kernel toma el control de la CPU, que destruye el env y llama al scheduler otra vez.
+
+La secuencia de llamadas es:
+1. umain termina, libmain llama a exit().
+2. exit llama a sys_env_destroy(0) (0 para indicar que se destruya el proceso actual).
+3. sys_env_destroy llama a return syscall de lib, con los parametros correspondientes a la syscall env destroy.
+4. syscall ejecuta la instruccion int, que genera una interrupcion por software.
+5. el CPU, al llegar la interrupcion, se fija el codigo a ejecutar en la IDT.
+6. este codigo es codigo del kernel, configurado en el tp pasado.
+
+---
+
+2. ¿en qué cambia la función env_destroy() en este TP, respecto al TP anterior?
+
+En este tp se llama a sched_yield, para que el planificador lance un nuevo proceso. En el tp anterior se iba directamente al monitor del kernel, ya que no habia soporte para multiples procesos.
+
+
+
 multicore_init
 --------------
 
