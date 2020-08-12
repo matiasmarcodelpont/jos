@@ -309,12 +309,14 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 static int
 sys_ipc_recv(void *dstva)
 {
-	if (dstva < (void *) UTOP && (uintptr_t) dstva % PGSIZE == 0) {
-		curenv->env_ipc_recving = true;
-		curenv->env_ipc_dstva = dstva;
-		sched_yield();
-	}
-	return -E_INVAL;
+	if (dstva < (void *) UTOP)
+		if ((uintptr_t) dstva % PGSIZE == 0) {
+			curenv->env_ipc_dstva = dstva;
+		} else {
+			return -E_INVAL;
+		}
+	curenv->env_ipc_recving = true;
+	sched_yield();
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
