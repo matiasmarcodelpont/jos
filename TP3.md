@@ -68,6 +68,11 @@ Cuando el 3er env (00001002) llama a sys_yield, se vuelve a ejecutar el 1er env,
 
 Luego, una vez que paso 4 veces por cada env, todos terminan en el mismo orden.
 
+ipc_recv
+--------
+
+Por mas que se guarde o no se guarde el id del sender a traves del primer parametro de ipc_recv, el usuario siempre tendra acceso a la variable global thisenv. Si el campo env_ipc_from es 0, entonces hubo un error en la llamada.
+
 multicore_init
 --------------
 
