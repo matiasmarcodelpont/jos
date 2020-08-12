@@ -83,6 +83,7 @@ void trap_18(void);
 void trap_19(void);
 void trap_20(void);
 void trap_21(void);
+void trap_32(void);
 void trap_48(void);
 
 void
@@ -90,28 +91,26 @@ trap_init(void)
 {
 	extern struct Segdesc gdt[];
 
-	SETGATE(idt[0], 0, GD_KT, &trap_0, 0);
-	SETGATE(idt[1], 0, GD_KT, &trap_1, 0);
-	SETGATE(idt[2], 0, GD_KT, &trap_2, 0);
-	SETGATE(idt[3], 0, GD_KT, &trap_3, 3);
-	SETGATE(idt[4], 0, GD_KT, &trap_4, 0);
-	SETGATE(idt[5], 0, GD_KT, &trap_5, 0);
-	SETGATE(idt[6], 0, GD_KT, &trap_6, 0);
-	SETGATE(idt[7], 0, GD_KT, &trap_7, 0);
-	SETGATE(idt[8], 0, GD_KT, &trap_8, 0);
-	SETGATE(idt[9], 0, GD_KT, &trap_9, 0);
-	SETGATE(idt[10], 0, GD_KT, &trap_10, 0);
-	SETGATE(idt[11], 0, GD_KT, &trap_11, 0);
-	SETGATE(idt[12], 0, GD_KT, &trap_12, 0);
-	SETGATE(idt[13], 0, GD_KT, &trap_13, 0);
-	SETGATE(idt[14], 0, GD_KT, &trap_14, 0);
-	SETGATE(idt[16], 0, GD_KT, &trap_16, 0);
-	SETGATE(idt[17], 0, GD_KT, &trap_17, 0);
-	SETGATE(idt[18], 0, GD_KT, &trap_18, 0);
-	SETGATE(idt[19], 0, GD_KT, &trap_19, 0);
-	SETGATE(idt[20], 0, GD_KT, &trap_20, 0);
-	SETGATE(idt[21], 0, GD_KT, &trap_21, 0);
-	SETGATE(idt[48], 0, GD_KT, &trap_48, 3);
+	SETGATE(idt[T_DIVIDE], 0, GD_KT, &trap_0, 0);
+	SETGATE(idt[T_DEBUG], 0, GD_KT, &trap_1, 0);
+	SETGATE(idt[T_NMI], 0, GD_KT, &trap_2, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, &trap_3, 3);
+	SETGATE(idt[T_OFLOW], 0, GD_KT, &trap_4, 0);
+	SETGATE(idt[T_BOUND], 0, GD_KT, &trap_5, 0);
+	SETGATE(idt[T_ILLOP], 0, GD_KT, &trap_6, 0);
+	SETGATE(idt[T_DEVICE], 0, GD_KT, &trap_7, 0);
+	SETGATE(idt[T_DBLFLT], 0, GD_KT, &trap_8, 0);
+	SETGATE(idt[T_TSS], 0, GD_KT, &trap_10, 0);
+	SETGATE(idt[T_SEGNP], 0, GD_KT, &trap_11, 0);
+	SETGATE(idt[T_STACK], 0, GD_KT, &trap_12, 0);
+	SETGATE(idt[T_GPFLT], 0, GD_KT, &trap_13, 0);
+	SETGATE(idt[T_PGFLT], 0, GD_KT, &trap_14, 0);
+	SETGATE(idt[T_FPERR], 0, GD_KT, &trap_16, 0);
+	SETGATE(idt[T_ALIGN], 0, GD_KT, &trap_17, 0);
+	SETGATE(idt[T_MCHK], 0, GD_KT, &trap_18, 0);
+	SETGATE(idt[T_SIMDERR], 0, GD_KT, &trap_19, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, &trap_32, 0);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, &trap_48, 3);
 
 	// Per-CPU setup
 	trap_init_percpu();
