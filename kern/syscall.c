@@ -350,6 +350,7 @@ sys_ipc_recv(void *dstva)
 		}
 	}
 	curenv->env_ipc_recving = true;
+	curenv->env_status = ENV_NOT_RUNNABLE;
 	sched_yield();
 }
 
@@ -373,7 +374,6 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_getenvid();
 	case SYS_yield:
 		sys_yield();
-		break;
 	case SYS_exofork:
 		return sys_exofork();
 	case SYS_env_set_status:
@@ -384,6 +384,10 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_page_map(a1,(void*)a2,a3,(void*)a4,a5);
 	case SYS_page_unmap:
 		return sys_page_unmap(a1,(void*)a2);
+	case SYS_ipc_recv:
+		return sys_ipc_recv((void *)a1);
+	case SYS_ipc_try_send:
+		return sys_ipc_try_send(a1, a2, (void *)a3, a4);
 	default:
 		return -E_INVAL;
 	}
