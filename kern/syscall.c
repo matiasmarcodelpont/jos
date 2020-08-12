@@ -224,8 +224,9 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 		return -E_NO_MEM;
 	}
 
-	if ((perm & PTE_W) && srcva) {  //	-E_INVAL if (perm & PTE_W), but
-		                        //srcva is read-only in srcenvid's adress space.
+	if ((perm & PTE_W) &&
+	    srcva) {  //	-E_INVAL if (perm & PTE_W), but
+		      // srcva is read-only in srcenvid's adress space.
 		return -E_INVAL;
 	}
 
