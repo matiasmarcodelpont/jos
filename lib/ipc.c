@@ -28,7 +28,7 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 		if (r >= 0 && perm_store)
 			*perm_store = thisenv->env_ipc_perm;
 	} else {
-		r = sys_ipc_recv((void *)UTOP);
+		r = sys_ipc_recv((void *) UTOP);
 	}
 	if (r < 0) {
 		if (from_env_store)

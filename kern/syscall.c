@@ -173,18 +173,19 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (return_code < 0) {
 		return return_code;
 	}
-	if((va >= (void*) UTOP) || ((ROUNDUP(va,PGSIZE) != va))){
+	if ((va >= (void *) UTOP) || ((ROUNDUP(va, PGSIZE) != va))) {
 		return -E_INVAL;
 	}
-	if( ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || (perm | PTE_SYSCALL) != PTE_SYSCALL ) {
+	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) ||
+	    (perm | PTE_SYSCALL) != PTE_SYSCALL) {
 		return E_INVAL;
 	}
 	struct PageInfo *page = page_alloc(ALLOC_ZERO);
-	if(page == NULL){
+	if (page == NULL) {
 		return -E_NO_MEM;
 	}
-	return_code = page_insert(env->env_pgdir,page,va,perm);
-	if(return_code < 0){
+	return_code = page_insert(env->env_pgdir, page, va, perm);
+	if (return_code < 0) {
 		page_free(page);
 		return return_code;
 	}
@@ -236,19 +237,18 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	    (ROUNDUP(dstva, PGSIZE) != dstva)) {
 		return -E_INVAL;
 	}
-	if((perm | PTE_SYSCALL) != PTE_SYSCALL) {
+	if ((perm | PTE_SYSCALL) != PTE_SYSCALL) {
 		return E_INVAL;
 	}
 
 	pte_t *pte;
 	struct PageInfo *page;
 	page = page_lookup(srcenv->env_pgdir, srcva, &pte);
-	if(!page) {
+	if (!page) {
 		return -E_NO_MEM;
 	}
 
-	if (!((perm & PTE_W) &&
-	    (*pte & PTE_W))) {
+	if (!((perm & PTE_W) && (*pte & PTE_W))) {
 		return -E_INVAL;
 	}
 
@@ -274,11 +274,11 @@ sys_page_unmap(envid_t envid, void *va)
 	if (return_code < 0) {
 		return return_code;
 	}
-	if((va >= (void*) UTOP) || (ROUNDUP(va,PGSIZE) != va)){
+	if ((va >= (void *) UTOP) || (ROUNDUP(va, PGSIZE) != va)) {
 		return -E_INVAL;
 	}
 
-	page_remove(env->env_pgdir,va);
+	page_remove(env->env_pgdir, va);
 	return 0;
 	panic("sys_page_unmap not implemented");
 }
@@ -377,17 +377,17 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	case SYS_exofork:
 		return sys_exofork();
 	case SYS_env_set_status:
-		return sys_env_set_status(a1,a2);
+		return sys_env_set_status(a1, a2);
 	case SYS_page_alloc:
-		return sys_page_alloc(a1,(void*)a2,a3);
+		return sys_page_alloc(a1, (void *) a2, a3);
 	case SYS_page_map:
-		return sys_page_map(a1,(void*)a2,a3,(void*)a4,a5);
+		return sys_page_map(a1, (void *) a2, a3, (void *) a4, a5);
 	case SYS_page_unmap:
-		return sys_page_unmap(a1,(void*)a2);
+		return sys_page_unmap(a1, (void *) a2);
 	case SYS_ipc_recv:
-		return sys_ipc_recv((void *)a1);
+		return sys_ipc_recv((void *) a1);
 	case SYS_ipc_try_send:
-		return sys_ipc_try_send(a1, a2, (void *)a3, a4);
+		return sys_ipc_try_send(a1, a2, (void *) a3, a4);
 	default:
 		return -E_INVAL;
 	}
