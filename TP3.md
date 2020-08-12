@@ -23,7 +23,50 @@ La secuencia de llamadas es:
 
 En este tp se llama a sched_yield, para que el planificador lance un nuevo proceso. En el tp anterior se iba directamente al monitor del kernel, ya que no habia soporte para multiples procesos.
 
+sys_yield
+---------
 
+Leer y estudiar el código del programa user/yield.c. Cambiar la función i386_init() para lanzar tres instancias de dicho programa, y mostrar y explicar la salida de make qemu-nox.
+
+```
+[00000000] new env 00001000
+[00000000] new env 00001001
+[00000000] new env 00001002
+Hello, I am environment 00001000.
+Hello, I am environment 00001001.
+Hello, I am environment 00001002.
+Back in environment 00001000, iteration 0.
+Back in environment 00001001, iteration 0.
+Back in environment 00001002, iteration 0.
+Back in environment 00001000, iteration 1.
+Back in environment 00001001, iteration 1.
+Back in environment 00001002, iteration 1.
+Back in environment 00001000, iteration 2.
+Back in environment 00001001, iteration 2.
+Back in environment 00001002, iteration 2.
+Back in environment 00001000, iteration 3.
+Back in environment 00001001, iteration 3.
+Back in environment 00001002, iteration 3.
+Back in environment 00001000, iteration 4.
+All done in environment 00001000.
+[00001000] exiting gracefully
+[00001000] free env 00001000
+Back in environment 00001001, iteration 4.
+All done in environment 00001001.
+[00001001] exiting gracefully
+[00001001] free env 00001001
+Back in environment 00001002, iteration 4.
+All done in environment 00001002.
+[00001002] exiting gracefully
+[00001002] free env 00001002
+```
+
+Las primeras lineas las imprime el kernel. Se crean los envs.
+Luego comienza el codigo de usuario. El programa imprime el "Hello, ..." y luego llama a sys_yield. Por eso se puede ver que los tres prints salen seguidos: El primer env llama a sys_yield, que ejecuta el segundo env, que imprime y luego llama a sys_yield, y asi.
+
+Cuando el 3er env (00001002) llama a sys_yield, se vuelve a ejecutar el 1er env, segun la logica del planificador robinson, ya que no hay mas envs creados. Luego se van ejecutando secuencialmente los envs creados. Esto corresponde a robinson, que va cambiando siempre de env, y solo vuelve a ejecutar un env si ya se ejecutaron todos los RUNNABLE desde la ultima ve que se ejecuto.
+
+Luego, una vez que paso 4 veces por cada env, todos terminan en el mismo orden.
 
 multicore_init
 --------------
