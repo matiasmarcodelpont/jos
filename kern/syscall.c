@@ -113,7 +113,7 @@ sys_env_set_status(envid_t envid, int status)
 	// envid's status.
 
 	// LAB 4: Your code here.
-	if (status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE) {
+	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE)) {
 		return -E_INVAL;
 	}
 	struct Env *env;
@@ -121,6 +121,7 @@ sys_env_set_status(envid_t envid, int status)
 	if (return_code < 0) {
 		return return_code;
 	}
+	env->env_status = status;
 	return 0;
 	panic("sys_env_set_status not implemented");
 }
@@ -167,6 +168,27 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 4: Your code here.
+	struct Env *env;
+	int return_code = envid2env(envid, &env, 1);
+	if (return_code < 0) {
+		return return_code;
+	}
+	if((va >= (void*) UTOP) || ((ROUNDUP(va,PGSIZE) != va))){
+		return -E_INVAL;
+	}
+	if( ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || (perm | PTE_SYSCALL) != PTE_SYSCALL ) {
+		return E_INVAL;
+	}
+	struct PageInfo *page = page_alloc(ALLOC_ZERO);
+	if(page == NULL){
+		return -E_NO_MEM;
+	}
+	return_code = page_insert(env->env_pgdir,page,va,perm);
+	if(return_code < 0){
+		page_free(page);
+		return return_code;
+	}
+	return 0;
 	panic("sys_page_alloc not implemented");
 }
 
@@ -207,26 +229,26 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if (return_code < 0) {
 		return return_code;
 	}
-	if (srcva >= (void *) UTOP || dstva >= (void *) UTOP) {
+	if ((srcva >= (void *) UTOP) || (dstva >= (void *) UTOP)) {
 		return -E_INVAL;
 	}
 	if ((ROUNDUP(srcva, PGSIZE) != srcva) ||
 	    (ROUNDUP(dstva, PGSIZE) != dstva)) {
 		return -E_INVAL;
 	}
-	if (!perm) {  //	-E_INVAL if perm is inappropriate (see sys_page_alloc).
-		return -E_INVAL;
+	if((perm | PTE_SYSCALL) != PTE_SYSCALL) {
+		return E_INVAL;
 	}
 
 	pte_t *pte;
 	struct PageInfo *page;
-	if (!(page = page_lookup(srcenv->env_pgdir, srcva, &pte))) {
+	page = page_lookup(srcenv->env_pgdir, srcva, &pte);
+	if(!page) {
 		return -E_NO_MEM;
 	}
 
-	if ((perm & PTE_W) &&
-	    srcva) {  //	-E_INVAL if (perm & PTE_W), but
-		      // srcva is read-only in srcenvid's adress space.
+	if (!((perm & PTE_W) &&
+	    (*pte & PTE_W))) {
 		return -E_INVAL;
 	}
 
@@ -247,6 +269,17 @@ sys_page_unmap(envid_t envid, void *va)
 	// Hint: This function is a wrapper around page_remove().
 
 	// LAB 4: Your code here.
+	struct Env *env;
+	int return_code = envid2env(envid, &env, 1);
+	if (return_code < 0) {
+		return return_code;
+	}
+	if((va >= (void*) UTOP) || (ROUNDUP(va,PGSIZE) != va)){
+		return -E_INVAL;
+	}
+
+	page_remove(env->env_pgdir,va);
+	return 0;
 	panic("sys_page_unmap not implemented");
 }
 
@@ -334,7 +367,19 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		return sys_getenvid();
 	case SYS_yield:
 		sys_yield();
+		break;
+	case SYS_exofork:
+		return sys_exofork();
+	case SYS_env_set_status:
+		return sys_env_set_status(a1,a2);
+	case SYS_page_alloc:
+		return sys_page_alloc(a1,(void*)a2,a3);
+	case SYS_page_map:
+		return sys_page_map(a1,(void*)a2,a3,(void*)a4,a5);
+	case SYS_page_unmap:
+		return sys_page_unmap(a1,(void*)a2);
 	default:
 		return -E_INVAL;
 	}
+	return 0;
 }
