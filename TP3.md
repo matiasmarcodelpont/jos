@@ -73,6 +73,17 @@ ipc_recv
 
 Por mas que se guarde o no se guarde el id del sender a traves del primer parametro de ipc_recv, el usuario siempre tendra acceso a la variable global thisenv. Si el campo env_ipc_from es 0, entonces hubo un error en la llamada.
 
+sys_ipc_try_send
+----------------
+
+¿Cómo se podría hacer bloqueante esta llamada? Esto es: qué estrategia de implementación se podría usar para que, si un proceso A intenta a enviar a B, pero B no está esperando un mensaje, el proceso A sea puesto en estado ENV_NOT_RUNNABLE, y sea despertado una vez B llame a ipc_recv().
+
+Tendria que se analogo a como esta ahora, pero al reves. En lugar de A marcar a B como RUNNABLE de nuevo, B tendria que marcar a A como RUNNABLE cuando se llama a la syscall ipc_recv. Los pasos serian:
+
+1. A llama a ipc_send, pero B no llamo a ipc_recv todavia.
+2. A es marcado como ENV_NOT_RUNNABLE.
+3. Una vez que B llama a ipc_recv, A es marcado como RUNNABLE de nuevo y B retorna normalmente de la syscall.
+
 multicore_init
 --------------
 
