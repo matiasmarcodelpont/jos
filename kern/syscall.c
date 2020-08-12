@@ -166,31 +166,25 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   parameters for correctness.
 	//   If page_insert() fails, remember to free the page you
 	//   allocated!
-
-	// LAB 4: Your code here.
 	struct Env *env;
-	int return_code = envid2env(envid, &env, 1);
-	if (return_code < 0) {
-		return return_code;
-	}
-	if ((va >= (void *) UTOP) || ((ROUNDUP(va, PGSIZE) != va))) {
+	if (envid2env(envid, &env, 1) < 0)
+		return -E_BAD_ENV;
+
+	if (va >= (void *) UTOP || (uintptr_t) va % PGSIZE != 0)
 		return -E_INVAL;
-	}
+
 	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) ||
-	    (perm | PTE_SYSCALL) != PTE_SYSCALL) {
+	    (perm | PTE_SYSCALL) != PTE_SYSCALL)
 		return E_INVAL;
-	}
-	struct PageInfo *page = page_alloc(ALLOC_ZERO);
-	if (page == NULL) {
+
+	struct PageInfo *page;
+	if (!(page = page_alloc(ALLOC_ZERO)))
 		return -E_NO_MEM;
-	}
-	return_code = page_insert(env->env_pgdir, page, va, perm);
-	if (return_code < 0) {
-		page_free(page);
-		return return_code;
-	}
+
+	if (page_insert(env->env_pgdir, page, va, perm) < 0)
+		return -E_NO_MEM;
+
 	return 0;
-	panic("sys_page_alloc not implemented");
 }
 
 // Map the page of memory at 'srcva' in srcenvid's address space
@@ -218,42 +212,35 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	//   parameters for correctness.
 	//   Use the third argument to page_lookup() to
 	//   check the current permissions on the page.
-
-	// LAB 4: Your code here.
 	struct Env *srcenv;
-	int return_code = envid2env(srcenvid, &srcenv, 1);
-	if (return_code < 0) {
-		return return_code;
-	}
+	if (envid2env(srcenvid, &srcenv, 1) < 0)
+		return -E_BAD_ENV;
+
 	struct Env *dstenv;
-	return_code = envid2env(dstenvid, &dstenv, 1);
-	if (return_code < 0) {
-		return return_code;
-	}
-	if ((srcva >= (void *) UTOP) || (dstva >= (void *) UTOP)) {
+	if (envid2env(dstenvid, &dstenv, 1) < 0)
+		return -E_BAD_ENV;
+
+	if ((srcva >= (void *) UTOP) || (dstva >= (void *) UTOP))
 		return -E_INVAL;
-	}
-	if ((ROUNDUP(srcva, PGSIZE) != srcva) ||
-	    (ROUNDUP(dstva, PGSIZE) != dstva)) {
+
+	if ((uintptr_t) srcva % PGSIZE != 0 || (uintptr_t) dstva % PGSIZE != 0)
 		return -E_INVAL;
-	}
-	if ((perm | PTE_SYSCALL) != PTE_SYSCALL) {
-		return E_INVAL;
-	}
+
+	if ((perm | PTE_SYSCALL) != PTE_SYSCALL)
+		return -E_INVAL;
 
 	pte_t *pte;
 	struct PageInfo *page;
-	page = page_lookup(srcenv->env_pgdir, srcva, &pte);
-	if (!page) {
-		return -E_NO_MEM;
-	}
-
-	if (!((perm & PTE_W) && (*pte & PTE_W))) {
+	if (!(page = page_lookup(srcenv->env_pgdir, srcva, &pte)))
 		return -E_INVAL;
-	}
 
-	return page_insert(dstenv->env_pgdir, page, dstva, perm);
-	panic("sys_page_map not implemented");
+	if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+		return -E_INVAL;
+
+	if (page_insert(dstenv->env_pgdir, page, dstva, perm) < 0)
+		return -E_NO_MEM;
+
+	return 0;
 }
 
 // Unmap the page of memory at 'va' in the address space of 'envid'.
@@ -267,20 +254,16 @@ static int
 sys_page_unmap(envid_t envid, void *va)
 {
 	// Hint: This function is a wrapper around page_remove().
-
-	// LAB 4: Your code here.
 	struct Env *env;
-	int return_code = envid2env(envid, &env, 1);
-	if (return_code < 0) {
-		return return_code;
-	}
-	if ((va >= (void *) UTOP) || (ROUNDUP(va, PGSIZE) != va)) {
+	if (envid2env(envid, &env, 1) < 0)
+		return -E_BAD_ENV;
+
+	if (va >= (void *) UTOP || (uintptr_t) va % PGSIZE != 0)
 		return -E_INVAL;
-	}
 
 	page_remove(env->env_pgdir, va);
+
 	return 0;
-	panic("sys_page_unmap not implemented");
 }
 
 // Try to send 'value' to the target env 'envid'.
@@ -324,8 +307,42 @@ sys_page_unmap(envid_t envid, void *va)
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
-	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	struct Env *env;
+	if (envid2env(envid, &env, 0) < 0)
+		return -E_BAD_ENV;
+
+	if (!env->env_ipc_recving)
+		return -E_IPC_NOT_RECV;
+
+	if (srcva < (void *) UTOP && env->env_ipc_dstva < (void *) UTOP) {
+		if ((uintptr_t) srcva % PGSIZE != 0)
+			return -E_INVAL;
+
+		if ((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) ||
+		    (perm | PTE_SYSCALL) != PTE_SYSCALL)
+			return -E_INVAL;
+
+		pte_t *pte;
+		struct PageInfo *page;
+		if (!(page = page_lookup(curenv->env_pgdir, srcva, &pte)))
+			return -E_INVAL;
+
+		if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+			return -E_INVAL;
+
+		if (page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm) < 0)
+			return -E_NO_MEM;
+
+		env->env_ipc_perm = perm;
+	} else {
+		env->env_ipc_perm = 0;
+	}
+	env->env_ipc_recving = 0;
+	env->env_ipc_from = envid;
+	env->env_ipc_value = value;
+	env->env_status = ENV_RUNNABLE;
+
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
