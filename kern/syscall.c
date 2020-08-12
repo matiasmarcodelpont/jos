@@ -84,6 +84,15 @@ sys_exofork(void)
 	// will appear to return 0.
 
 	// LAB 4: Your code here.
+	struct Env* env;
+	int return_code = env_alloc(env,curenv->env_id);
+	if (return_code < 0){
+		return return_code;
+	}
+	env->env_status = ENV_NOT_RUNNABLE;
+	env->env_tf = curenv->env_tf;
+	env->env_tf.tf_regs.reg_eax = 0;
+	return env->env_id;
 	panic("sys_exofork not implemented");
 }
 
@@ -104,6 +113,15 @@ sys_env_set_status(envid_t envid, int status)
 	// envid's status.
 
 	// LAB 4: Your code here.
+	if(status != ENV_RUNNABLE && status != ENV_NOT_RUNNABLE) {
+		return -E_INVAL;
+	}
+	struct Env* env;
+	int return_code = envid2env(envid,env,1);
+	if (return_code < 0) {
+		return return_code;
+	}
+	return 0;
 	panic("sys_env_set_status not implemented");
 }
 
@@ -179,6 +197,37 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	//   check the current permissions on the page.
 
 	// LAB 4: Your code here.
+	struct Env* srcenv;
+	int return_code = envid2env(srcenvid,srcenv,1);
+	if (return_code < 0) {
+		return return_code;
+	}
+	struct Env* dstenv;
+	return_code = envid2env(dstenvid,dstenv,1);
+	if (return_code < 0) {
+		return return_code;
+	}
+	if(srcva >= UTOP || dstva >= UTOP) {
+		return -E_INVAL;
+	}
+	if((ROUNDUP(srcva,PGSIZE) != srcva) || (ROUNDUP(dstva,PGSIZE) != dstva)) {
+		return -E_INVAL;
+	}
+	if(!perm) { //	-E_INVAL if perm is inappropriate (see sys_page_alloc).
+		return -E_INVAL;
+	}
+
+	pte_t *pte;
+	struct PageInfo* page;
+	if (!(page = page_lookup(srcenv->env_pgdir, srcva, &pte))){
+		return -E_NO_MEM;
+	}
+
+	if((perm & PTE_W) && srcva) { //	-E_INVAL if (perm & PTE_W), but srcva is read-only in srcenvid's adress space.
+		return -E_INVAL;
+	}
+	
+	return page_insert(dstenv->env_pgdir, page, dstva, perm);
 	panic("sys_page_map not implemented");
 }
 
