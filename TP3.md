@@ -188,3 +188,18 @@ movl $(RELOC(entry_pgdir)), %eax
 y luego de activar memoria virtual:
 - eip: 0x704e
 - mpentry_kstack: 0xf0265000 <percpu_kstacks+131072>
+
+
+5. Responder qué ocurre:
+
+en JOS, si un proceso llama a sys_env_destroy(0), sys_env_destroy(-1)
+
+Al hacer sys_env_destroy(0), se destruye el environment actual, y luego lanza un nuevo environment, sin retornar al caller.
+Al hacer sys_env_destroy(-1), deberia retornar -E_BAD_ENV, ya que los envids menores a 0 son invalidos.
+
+en Linux, si un proceso llama a kill(0, 9) o kill(-1, 9)
+
+Si se llama a kill(n,9), se le envia al pid especificado por n la senal 9 (KILL).
+
+En el caso n=0, se le envia a todos los procesos en el grupo de procesos actual.
+En el caso n=-1, se le envia a todos los procesos con pid mayor que 1
