@@ -252,12 +252,9 @@ trap_dispatch(struct Trapframe *tf)
 		print_trapframe(tf);
 		if (tf->tf_cs == GD_KT)
 			panic("unhandled trap in kernel");
-		else {
+		else
 			env_destroy(curenv);
-		}
 	}
-
-	return;
 }
 
 void

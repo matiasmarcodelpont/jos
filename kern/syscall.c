@@ -82,8 +82,6 @@ sys_exofork(void)
 	// status is set to ENV_NOT_RUNNABLE, and the register set is copied
 	// from the current environment -- but tweaked so sys_exofork
 	// will appear to return 0.
-
-	// LAB 4: Your code here.
 	struct Env *env;
 	int return_code = env_alloc(&env, curenv->env_id);
 	if (return_code < 0) {
@@ -93,7 +91,6 @@ sys_exofork(void)
 	env->env_tf = curenv->env_tf;
 	env->env_tf.tf_regs.reg_eax = 0;
 	return env->env_id;
-	panic("sys_exofork not implemented");
 }
 
 // Set envid's env_status to status, which must be ENV_RUNNABLE
@@ -111,8 +108,6 @@ sys_env_set_status(envid_t envid, int status)
 	// You should set envid2env's third argument to 1, which will
 	// check whether the current environment has permission to set
 	// envid's status.
-
-	// LAB 4: Your code here.
 	if ((status != ENV_RUNNABLE) && (status != ENV_NOT_RUNNABLE)) {
 		return -E_INVAL;
 	}
@@ -123,7 +118,6 @@ sys_env_set_status(envid_t envid, int status)
 	}
 	env->env_status = status;
 	return 0;
-	panic("sys_env_set_status not implemented");
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -181,8 +175,10 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	if (!(page = page_alloc(ALLOC_ZERO)))
 		return -E_NO_MEM;
 
-	if (page_insert(env->env_pgdir, page, va, perm) < 0)
+	if (page_insert(env->env_pgdir, page, va, perm) < 0) {
+		page_free(page);
 		return -E_NO_MEM;
+	}
 
 	return 0;
 }
@@ -226,7 +222,7 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if ((uintptr_t) srcva % PGSIZE != 0 || (uintptr_t) dstva % PGSIZE != 0)
 		return -E_INVAL;
 
-	if ((perm | PTE_SYSCALL) != PTE_SYSCALL)
+	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || (perm | PTE_SYSCALL) != PTE_SYSCALL)
 		return -E_INVAL;
 
 	pte_t *pte;
@@ -234,7 +230,7 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if (!(page = page_lookup(srcenv->env_pgdir, srcva, &pte)))
 		return -E_INVAL;
 
-	if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+	if (perm & PTE_W && !(*pte & PTE_W))
 		return -E_INVAL;
 
 	if (page_insert(dstenv->env_pgdir, page, dstva, perm) < 0)
@@ -327,7 +323,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if (!(page = page_lookup(curenv->env_pgdir, srcva, &pte)))
 			return -E_INVAL;
 
-		if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+		if (perm & PTE_W && !(*pte & PTE_W))
 			return -E_INVAL;
 
 		if (page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm) < 0)
