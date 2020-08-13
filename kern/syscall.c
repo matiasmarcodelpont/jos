@@ -222,7 +222,8 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if ((uintptr_t) srcva % PGSIZE != 0 || (uintptr_t) dstva % PGSIZE != 0)
 		return -E_INVAL;
 
-	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) || (perm | PTE_SYSCALL) != PTE_SYSCALL)
+	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) ||
+	    (perm | PTE_SYSCALL) != PTE_SYSCALL)
 		return -E_INVAL;
 
 	pte_t *pte;
