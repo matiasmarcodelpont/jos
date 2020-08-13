@@ -59,32 +59,35 @@ duppage(envid_t envid, unsigned pn)
 }
 
 
-
 static void
-dup_or_share(envid_t dstenv, void *va, int perm) {
-
+dup_or_share(envid_t dstenv, void *va, int perm)
+{
 	int r;
-	if((perm & PTE_W) == 0) { //si la pagina es de solo lectura se comparte en lugar de crear copia. (la mapeo pero sin allocar).
-		if ((r = sys_page_map(dstenv, va, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
+	if ((perm &
+	     PTE_W) == 0) {  // si la pagina es de solo lectura se comparte en
+		             // lugar de crear copia. (la mapeo pero sin allocar).
+		if ((r = sys_page_map(dstenv, va, 0, UTEMP, PTE_P | PTE_U | PTE_W)) <
+		    0)
 			panic("sys_page_map: %e", r);
 		memmove(UTEMP, va, PGSIZE);
 		if ((r = sys_page_unmap(0, UTEMP)) < 0)
 			panic("sys_page_unmap: %e", r);
-	}
-	else {
-		if ((r = sys_page_alloc(dstenv, va, PTE_P|PTE_U|PTE_W)) < 0)
+	} else {
+		if ((r = sys_page_alloc(dstenv, va, PTE_P | PTE_U | PTE_W)) < 0)
 			panic("sys_page_alloc: %e", r);
-		if ((r = sys_page_map(dstenv, va, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)
+		if ((r = sys_page_map(dstenv, va, 0, UTEMP, PTE_P | PTE_U | PTE_W)) <
+		    0)
 			panic("sys_page_map: %e", r);
 		memmove(UTEMP, va, PGSIZE);
 		if ((r = sys_page_unmap(0, UTEMP)) < 0)
 			panic("sys_page_unmap: %e", r);
 	}
-
 }
 
 
-envid_t fork_v0(void) {
+envid_t
+fork_v0(void)
+{
 	envid_t envid;
 	uint8_t *addr;
 	int r;
@@ -100,26 +103,31 @@ envid_t fork_v0(void) {
 		thisenv = &envs[ENVX(sys_getenvid())];
 		return 0;
 	}
-	
-	// La copia del espacio de direcciones del padre al hijo difiere de dumbfork() de la siguiente manera:
-	// se abandona el uso de end; en su lugar, se procesan página a página todas las direcciones desde 0 hasta UTOP.
+
+	// La copia del espacio de direcciones del padre al hijo difiere de
+	// dumbfork() de la siguiente manera: se abandona el uso de end; en su
+	// lugar, se procesan página a página todas las direcciones desde 0
+	// hasta UTOP.
 	for (addr = 0; *addr < UTOP; *addr += PGSIZE) {
-		if (((uvpt[PGNUM(*addr)] & PTE_P) == PTE_P) && ((uvpd[PDX(*addr)] & PTE_P) == PTE_P)) { // si la página (dirección) está mapeada, se invoca a la función dup_or_share()
-			dup_or_share(envid,addr,uvpt[PGNUM(*addr)] & PTE_SYSCALL); //chequear perm
+		if (((uvpt[PGNUM(*addr)] & PTE_P) == PTE_P) &&
+		    ((uvpd[PDX(*addr)] & PTE_P) ==
+		     PTE_P)) {  // si la página (dirección) está mapeada, se invoca a la función dup_or_share()
+			dup_or_share(envid,
+			             addr,
+			             uvpt[PGNUM(*addr)] &
+			                     PTE_SYSCALL);  // chequear perm
 		}
 	}
 
 	// Also copy the stack we are currently running on.
-	//duppage(envid, ROUNDDOWN(&addr, PGSIZE));
+	// duppage(envid, ROUNDDOWN(&addr, PGSIZE));
 
 	// Start the child environment running
 	if ((r = sys_env_set_status(envid, ENV_RUNNABLE)) < 0)
 		panic("sys_env_set_status: %e", r);
 
 
-
 	return envid;
-
 }
 
 
