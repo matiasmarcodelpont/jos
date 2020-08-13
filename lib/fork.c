@@ -63,9 +63,9 @@ static void
 dup_or_share(envid_t dstenv, void *va, int perm)
 {
 	int r;
-	if ((perm &
-	     PTE_W) == 0) {  // si la pagina es de solo lectura se comparte en
-		             // lugar de crear copia. (la mapeo pero sin allocar).
+	if ((perm & PTE_W) ==
+	    0) {  // si la pagina es de solo lectura se comparte en
+		  // lugar de crear copia. (la mapeo pero sin allocar).
 		if ((r = sys_page_map(dstenv, va, 0, UTEMP, PTE_P | PTE_U | PTE_W)) <
 		    0)
 			panic("sys_page_map: %e", r);
