@@ -234,7 +234,7 @@ sys_page_map(envid_t srcenvid, void *srcva, envid_t dstenvid, void *dstva, int p
 	if (!(page = page_lookup(srcenv->env_pgdir, srcva, &pte)))
 		return -E_INVAL;
 
-	if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+	if (perm & PTE_W && !(*pte & PTE_W))
 		return -E_INVAL;
 
 	if (page_insert(dstenv->env_pgdir, page, dstva, perm) < 0)
@@ -327,7 +327,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if (!(page = page_lookup(curenv->env_pgdir, srcva, &pte)))
 			return -E_INVAL;
 
-		if (perm & PTE_W && !((uintptr_t) pte & PTE_W))
+		if (perm & PTE_W && !(*pte & PTE_W))
 			return -E_INVAL;
 
 		if (page_insert(env->env_pgdir, page, env->env_ipc_dstva, perm) < 0)
