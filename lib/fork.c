@@ -71,9 +71,8 @@ dup_or_share(envid_t dstenv, void *va, int perm)
 		memmove(UTEMP, va, PGSIZE);
 		if ((r = sys_page_unmap(0, UTEMP)) < 0)
 			panic("sys_page_unmap: %e", r);
-	} else
-		if ((r = sys_page_map(0, va, dstenv, va, perm)) < 0)
-			panic("sys_page_map: %e", r);
+	} else if ((r = sys_page_map(0, va, dstenv, va, perm)) < 0)
+		panic("sys_page_map: %e", r);
 }
 
 
@@ -96,12 +95,12 @@ fork_v0(void)
 	// dumbfork() de la siguiente manera: se abandona el uso de end; en su
 	// lugar, se procesan página a página todas las direcciones desde 0
 	// hasta UTOP.
-	for (void *addr = (void *)UTEXT; addr < (void *)UTOP; addr += PGSIZE)
+	for (void *addr = (void *) UTEXT; addr < (void *) UTOP; addr += PGSIZE)
 		if ((uvpd[PDX(addr)] & PTE_P) && (uvpt[PGNUM(addr)] & PTE_P))
 			dup_or_share(envid, addr, uvpt[PGNUM(addr)] & PTE_SYSCALL);
 
 	// Also copy the stack we are currently running on.
-	dup_or_share(envid, (void *)(USTACKTOP - PGSIZE), PTE_P|PTE_U|PTE_W);
+	dup_or_share(envid, (void *) (USTACKTOP - PGSIZE), PTE_P | PTE_U | PTE_W);
 
 	// Start the child environment running
 	int r;
@@ -132,9 +131,7 @@ fork_v0(void)
 envid_t
 fork(void)
 {
-	// LAB 4: Your code here.
 	return fork_v0();
-	panic("fork not implemented");
 }
 
 // Challenge!
