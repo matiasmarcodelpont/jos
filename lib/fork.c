@@ -23,18 +23,27 @@ pgfault(struct UTrapframe *utf)
 	// Hint:
 	//   Use the read-only page table mappings at uvpt
 	//   (see <inc/memlayout.h>).
-
-	// LAB 4: Your code here.
+	if (!(err & FEC_WR))
+		panic("read page fault on address 0x%08x", addr);
+	if (!(err & FEC_PR))
+		panic("not present page fault on address 0x%08x", addr);
+	if (!(uvpt[PGNUM(addr)] & PTE_COW))
+		panic("write page fault on address 0x%08x", addr);
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
 	// page to the old page's address.
 	// Hint:
 	//   You should make three system calls.
+	if ((r = sys_page_alloc(0, UTEMP, PTE_P | PTE_U | PTE_W)) < 0)
+		panic("sys_page_alloc: %e", r);
+	memmove(UTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 
-	// LAB 4: Your code here.
+	if ((r = sys_page_map(0, addr, 0, UTEMP, PTE_P | PTE_U | PTE_W)) < 0)
+		panic("sys_page_map: %e", r);
 
-	panic("pgfault not implemented");
+	if ((r = sys_page_unmap(0, UTEMP)) < 0)
+		panic("sys_page_unmap: %e", r);
 }
 
 //
