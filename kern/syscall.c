@@ -174,7 +174,7 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 
 	if (((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) ||
 	    (perm | PTE_SYSCALL) != PTE_SYSCALL)
-		return E_INVAL;
+		return -E_INVAL;
 
 	struct PageInfo *page;
 	if (!(page = page_alloc(ALLOC_ZERO)))
