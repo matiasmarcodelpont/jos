@@ -150,9 +150,32 @@ fork_v0(void)
 envid_t
 fork(void)
 {
-	// LAB 4: Your code here.
-	return fork_v0();
-	panic("fork not implemented");
+	set_pgfault_handler(pgfault);
+	envid_t envid = sys_exofork();
+	if (envid < 0)
+		return envid;
+	else if (envid == 0)
+		thisenv = &envs[ENVX(sys_getenvid())];
+	else {
+		extern void _pgfault_upcall(void);
+		int r;
+		if ((r = sys_page_alloc(envid,
+		                        (void *) UXSTACKTOP,
+		                        PTE_P | PTE_U | PTE_W)) < 0)
+			panic("sys_page_alloc: %e", r);
+		if ((r = sys_env_set_pgfault_upcall(envid, _pgfault_upcall)) < 0)
+			panic("sys_env_set_pgfault_upcall: %e", r);
+
+		for (void *i = 0; i < (void *) USTACKTOP; i += PGSIZE)
+			if ((uvpd[PDX(i)] & PTE_P) && (uvpt[PTX(i)] & PTE_P)) {
+				r = duppage(envid, PGNUM(i));
+				if (r < 0)
+					return r;
+			}
+
+		r = sys_env_set_status(envid, ENV_RUNNABLE);
+	}
+	return envid;
 }
 
 // Challenge!
