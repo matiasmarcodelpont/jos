@@ -52,9 +52,17 @@ static int
 duppage(envid_t envid, unsigned pn)
 {
 	int r;
-
-	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	void *paddr = (void *) (pn * PGSIZE);
+	if (uvpt[PGNUM(paddr)] & (PTE_W | PTE_COW)) {
+		if ((r = sys_page_map(
+		             0, paddr, envid, paddr, PTE_P | PTE_U | PTE_COW)) < 0 ||
+		    (r = sys_page_map(
+		             envid, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) < 0)
+			return r;
+	} else {
+		if ((r = sys_page_map(0, paddr, envid, paddr, PTE_P | PTE_U)) < 0)
+			return r;
+	}
 	return 0;
 }
 
@@ -167,7 +175,7 @@ fork(void)
 			panic("sys_env_set_pgfault_upcall: %e", r);
 
 		for (void *i = 0; i < (void *) USTACKTOP; i += PGSIZE)
-			if ((uvpd[PDX(i)] & PTE_P) && (uvpt[PTX(i)] & PTE_P)) {
+			if ((uvpd[PDX(i)] & PTE_P) && (uvpt[PGNUM(i)] & PTE_P)) {
 				r = duppage(envid, PGNUM(i));
 				if (r < 0)
 					return r;
