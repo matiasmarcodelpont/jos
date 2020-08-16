@@ -39,7 +39,9 @@ pgfault(struct UTrapframe *utf)
 		panic("sys_page_alloc: %e", r);
 	memmove(PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 
-	if ((r = sys_page_map(0, PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
+	if ((r = sys_page_map(
+	             0, PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) <
+	    0)
 		panic("sys_page_map: %e", r);
 
 	if ((r = sys_page_unmap(0, PFTEMP)) < 0)
@@ -65,8 +67,8 @@ duppage(envid_t envid, unsigned pn)
 	if (uvpt[pn] & (PTE_W | PTE_COW)) {
 		if ((r = sys_page_map(
 		             0, paddr, envid, paddr, PTE_P | PTE_U | PTE_COW)) < 0 ||
-		    (r = sys_page_map(
-		             0, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) < 0)
+		    (r = sys_page_map(0, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) <
+		            0)
 			return r;
 	} else {
 		if ((r = sys_page_map(0, paddr, envid, paddr, PTE_P | PTE_U)) < 0)
@@ -164,7 +166,7 @@ fork(void)
 		if ((r = sys_env_set_pgfault_upcall(envid, _pgfault_upcall)) < 0)
 			panic("sys_env_set_pgfault_upcall: %e", r);
 
-		for (void *i = (void *)UTEXT; i < (void *) USTACKTOP; i += PGSIZE)
+		for (void *i = (void *) UTEXT; i < (void *) USTACKTOP; i += PGSIZE)
 			if ((uvpd[PDX(i)] & PTE_P) && (uvpt[PGNUM(i)] & PTE_P)) {
 				r = duppage(envid, PGNUM(i));
 				if (r < 0)
