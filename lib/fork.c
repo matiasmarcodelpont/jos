@@ -35,14 +35,14 @@ pgfault(struct UTrapframe *utf)
 	// page to the old page's address.
 	// Hint:
 	//   You should make three system calls.
-	if ((r = sys_page_alloc(0, UTEMP, PTE_P | PTE_U | PTE_W)) < 0)
+	if ((r = sys_page_alloc(0, PFTEMP, PTE_P | PTE_U | PTE_W)) < 0)
 		panic("sys_page_alloc: %e", r);
-	memmove(UTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
+	memmove(PFTEMP, ROUNDDOWN(addr, PGSIZE), PGSIZE);
 
-	if ((r = sys_page_map(0, addr, 0, UTEMP, PTE_P | PTE_U | PTE_W)) < 0)
+	if ((r = sys_page_map(0, PFTEMP, 0, ROUNDDOWN(addr, PGSIZE), PTE_P | PTE_U | PTE_W)) < 0)
 		panic("sys_page_map: %e", r);
 
-	if ((r = sys_page_unmap(0, UTEMP)) < 0)
+	if ((r = sys_page_unmap(0, PFTEMP)) < 0)
 		panic("sys_page_unmap: %e", r);
 }
 
@@ -62,11 +62,11 @@ duppage(envid_t envid, unsigned pn)
 {
 	int r;
 	void *paddr = (void *) (pn * PGSIZE);
-	if (uvpt[PGNUM(paddr)] & (PTE_W | PTE_COW)) {
+	if (uvpt[pn] & (PTE_W | PTE_COW)) {
 		if ((r = sys_page_map(
 		             0, paddr, envid, paddr, PTE_P | PTE_U | PTE_COW)) < 0 ||
 		    (r = sys_page_map(
-		             envid, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) < 0)
+		             0, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) < 0)
 			return r;
 	} else {
 		if ((r = sys_page_map(0, paddr, envid, paddr, PTE_P | PTE_U)) < 0)
@@ -148,7 +148,6 @@ fork_v0(void)
 envid_t
 fork(void)
 {
-	return fork_v0();
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
 	if (envid < 0)
@@ -159,13 +158,13 @@ fork(void)
 		extern void _pgfault_upcall(void);
 		int r;
 		if ((r = sys_page_alloc(envid,
-		                        (void *) UXSTACKTOP,
+		                        (void *) (UXSTACKTOP - PGSIZE),
 		                        PTE_P | PTE_U | PTE_W)) < 0)
 			panic("sys_page_alloc: %e", r);
 		if ((r = sys_env_set_pgfault_upcall(envid, _pgfault_upcall)) < 0)
 			panic("sys_env_set_pgfault_upcall: %e", r);
 
-		for (void *i = 0; i < (void *) USTACKTOP; i += PGSIZE)
+		for (void *i = (void *)UTEXT; i < (void *) USTACKTOP; i += PGSIZE)
 			if ((uvpd[PDX(i)] & PTE_P) && (uvpt[PGNUM(i)] & PTE_P)) {
 				r = duppage(envid, PGNUM(i));
 				if (r < 0)
