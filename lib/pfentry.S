@@ -63,11 +63,11 @@ _pgfault_upcall:
 	// registers are available for intermediate calculations.  You
 	// may find that you have to rearrange your code in non-obvious
 	// ways as registers become unavailable as scratch space.
-	movl  40(%esp), %ebx     // Guardo el valor de trap time eip en ebx
-	movl  52(%esp), %eax     // Guardo el valor de trap time esp en eax
-	movl	%ebx, (%eax)       // Guardo el valor de ebx en la direccion eax
-	addl  $4, %ebx     			 // Le sumo 4 a ebx
-	movl	%ebx, 52(%esp)     // Guardo el nuevo valor de trap-time esp
+	movl  40(%esp), %eax     // Guardo el valor de trap time eip en eax
+	movl  48(%esp), %ebx     // Guardo el valor de trap time esp en ebx
+	subl  $4, %ebx     			 // Le sumo 4 a ebx (trap-time esp)
+	movl	%eax, (%ebx)       // Guardo el valor de eax en la direccion ebx
+	movl	%ebx, 48(%esp)     // Guardo el nuevo valor de trap-time esp
 
 	// Restore the trap-time registers.  After you do this, you
 	// can no longer modify any general-purpose registers.

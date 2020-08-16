@@ -364,11 +364,12 @@ page_fault_handler(struct Trapframe *tf)
 
 		// Inicializar a la dirección correcta por abajo de UXSTACKTOP.
 		// No olvidar llamadas a user_mem_assert().
-		user_mem_assert(curenv, (void *) UXSTACKTOP, PGSIZE, PTE_W);
-		if (ROUNDDOWN(tf->tf_eip, PGSIZE) == UXSTACKTOP)
-			u = (void *) tf->tf_eip + 4;
+		if (ROUNDUP(tf->tf_esp, PGSIZE) == UXSTACKTOP)
+			u = (void *) tf->tf_esp - 4 - sizeof(struct UTrapframe);
 		else
-			u = (void *) UXSTACKTOP;
+			u = (void *) (UXSTACKTOP - sizeof(struct UTrapframe));
+
+		user_mem_assert(curenv, (void *) ROUNDDOWN(u, PGSIZE), PGSIZE, PTE_W);
 
 		// Completar el UTrapframe, copiando desde "tf".
 		u->utf_fault_va = fault_va;
@@ -380,7 +381,7 @@ page_fault_handler(struct Trapframe *tf)
 
 		// Cambiar a dónde se va a ejecutar el proceso.
 		tf->tf_eip = (uintptr_t) curenv->env_pgfault_upcall;
-		tf->tf_esp = (uintptr_t) &u->utf_fault_va;
+		tf->tf_esp = (uintptr_t) u;
 
 		// Saltar.
 		env_run(curenv);
