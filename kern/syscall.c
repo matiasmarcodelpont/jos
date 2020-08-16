@@ -334,8 +334,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	} else {
 		env->env_ipc_perm = 0;
 	}
-	env->env_ipc_recving = 0;
-	env->env_ipc_from = envid;
+	env->env_ipc_recving = false;
+	env->env_ipc_from = curenv->env_id;
 	env->env_ipc_value = value;
 	env->env_status = ENV_RUNNABLE;
 
@@ -365,6 +365,7 @@ sys_ipc_recv(void *dstva)
 	}
 	curenv->env_ipc_recving = true;
 	curenv->env_status = ENV_NOT_RUNNABLE;
+	curenv->env_tf.tf_regs.reg_eax = 0;
 	sched_yield();
 }
 
