@@ -136,8 +136,30 @@ fs_init(void)
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
-	// LAB 5: Your code here.
-	panic("file_block_walk not implemented");
+	if (filebno > NDIRECT + NINDIRECT)
+		return -E_INVAL;
+
+	if (filebno < NDIRECT) {
+		if (ppdiskbno)
+			*ppdiskbno = f->f_direct + filebno;
+		return 0;
+	}
+
+	if (!f->f_indirect) {
+		if (!alloc)
+			return -E_NOT_FOUND;
+
+		int inblockno;
+		if ((inblockno = alloc_block()) < 0)
+			return -E_NO_DISK;
+
+		f->f_indirect = inblockno;
+	}
+
+	if (ppdiskbno)
+		*ppdiskbno =
+		        (uint32_t *) diskaddr(f->f_indirect) + filebno - NDIRECT;
+	return 0;
 }
 
 // Set *blk to the address in memory where the filebno'th
