@@ -152,6 +152,7 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 		int inblockno;
 		if ((inblockno = alloc_block()) < 0)
 			return -E_NO_DISK;
+		memset(diskaddr(inblockno), 0, BLKSIZE);
 
 		f->f_indirect = inblockno;
 	}
@@ -173,8 +174,20 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
-	// LAB 5: Your code here.
-	panic("file_get_block not implemented");
+	uint32_t *ppdiskbno;
+	int r;
+	if ((r = file_block_walk(f, filebno, &ppdiskbno, 1)) < 0)
+		return r;
+
+	if (!*ppdiskbno) {
+		if ((r = alloc_block()) < 0)
+			return r;
+		memset(diskaddr(r), 0, BLKSIZE);
+		*ppdiskbno = r;
+	}
+
+	*blk = diskaddr(*ppdiskbno);
+	return 0;
 }
 
 // Try to find a file named "name" in dir.  If so, set *file to it.
