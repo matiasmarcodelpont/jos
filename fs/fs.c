@@ -64,6 +64,7 @@ alloc_block(void)
 	for (int i = 0; i < super->s_nblocks; i++)
 		if (bitmap[i / 32] & (1 << (i % 32))) {
 			bitmap[i / 32] &= ~(1 << (i % 32));
+			flush_block(diskaddr(i));
 			return i;
 		}
 
