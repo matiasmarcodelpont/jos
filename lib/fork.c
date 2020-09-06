@@ -72,10 +72,8 @@ duppage(envid_t envid, unsigned pn)
 			return r;
 	}
 	if (uvpt[pn] & (PTE_SHARE)) {
-		if ((r = sys_page_map(
-		             0, paddr, envid, paddr, uvpt[pn])) < 0 ||
-		    (r = sys_page_map(0, paddr, 0, paddr, uvpt[pn])) <
-		            0)
+		if ((r = sys_page_map(0, paddr, envid, paddr, uvpt[pn])) < 0 ||
+		    (r = sys_page_map(0, paddr, 0, paddr, uvpt[pn])) < 0)
 			return r;
 	} else {
 		if ((r = sys_page_map(0, paddr, envid, paddr, PTE_P | PTE_U)) < 0)

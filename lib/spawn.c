@@ -324,11 +324,11 @@ copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
 	int r;
-	
+
 	for (void *i = (void *) UTEXT; i < (void *) USTACKTOP; i += PGSIZE)
 		if (uvpd[PDX(i)] & PTE_SHARE) {
 			if ((r = sys_page_map(0, i, child, i, uvpd[PDX(i)])) < 0)
-			return r;
+				return r;
 		}
 
 	return 0;

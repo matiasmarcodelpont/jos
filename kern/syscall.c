@@ -130,21 +130,25 @@ sys_env_set_status(envid_t envid, int status)
 static int
 sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 {
-	// LAB 5: Your code here.
 	// Remember to check whether the user has supplied us with a good
 	// address!
 
-	(*tf).tf_eflags |= FL_IOPL_0;
-
-	if((void *) tf->tf_eip >= (void *) UTOP || tf->tf_eip % PGSIZE != 0)
+	if ((void *) tf->tf_eip >= (void *) UTOP || tf->tf_eip % PGSIZE != 0 ||
+	    (void *) tf->tf_esp >= (void *) UTOP || tf->tf_esp % PGSIZE != 0)
 		return -E_INVAL;
 
 	struct Env *env;
 	if (envid2env(envid, &env, 1) < 0) {
 		return -E_BAD_ENV;
 	}
-	env->env_tf = *tf;
 
+	tf->tf_eflags &= ~FL_IOPL_MASK;
+	tf->tf_ds = GD_UD | 3;
+	tf->tf_es = GD_UD | 3;
+	tf->tf_ss = GD_UD | 3;
+	tf->tf_cs = GD_UT | 3;
+	tf->tf_eflags = FL_IF;
+	env->env_tf = *tf;
 	return 0;
 }
 

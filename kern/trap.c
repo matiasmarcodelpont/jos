@@ -247,11 +247,11 @@ trap_dispatch(struct Trapframe *tf)
 		                              tf->tf_regs.reg_esi);
 		break;
 
-	case IRQ_OFFSET+IRQ_KBD:
+	case IRQ_OFFSET + IRQ_KBD:
 		kbd_intr();
 		break;
 
-	case IRQ_OFFSET+IRQ_SERIAL:
+	case IRQ_OFFSET + IRQ_SERIAL:
 		serial_intr();
 		break;
 
