@@ -133,7 +133,8 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf)
 	// Remember to check whether the user has supplied us with a good
 	// address!
 
-	if ((void *) tf->tf_eip >= (void *) UTOP || tf->tf_eip % PGSIZE != 0 ||
+	if ((void *) tf >= (void *) UTOP ||
+	    (void *) tf->tf_eip >= (void *) UTOP || tf->tf_eip % PGSIZE != 0 ||
 	    (void *) tf->tf_esp >= (void *) UTOP || tf->tf_esp % PGSIZE != 0)
 		return -E_INVAL;
 
