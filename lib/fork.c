@@ -64,14 +64,15 @@ duppage(envid_t envid, unsigned pn)
 {
 	int r;
 	void *paddr = (void *) (pn * PGSIZE);
-	if (uvpt[pn] & (PTE_W | PTE_COW)) {
+	if (uvpt[pn] & PTE_SHARE) {
+		if ((r = sys_page_map(
+		             0, paddr, envid, paddr, uvpt[pn] & PTE_SYSCALL)) < 0)
+			return r;
+	} else if (uvpt[pn] & (PTE_W | PTE_COW)) {
 		if ((r = sys_page_map(
 		             0, paddr, envid, paddr, PTE_P | PTE_U | PTE_COW)) < 0 ||
 		    (r = sys_page_map(0, paddr, 0, paddr, PTE_P | PTE_U | PTE_COW)) <
 		            0)
-			return r;
-	} else if (uvpt[pn] & (PTE_SHARE)) {
-		if ((r = sys_page_map(0, paddr, envid, paddr, uvpt[pn])) < 0)
 			return r;
 	} else {
 		if ((r = sys_page_map(0, paddr, envid, paddr, PTE_P | PTE_U)) < 0)

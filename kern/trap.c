@@ -84,6 +84,8 @@ void trap_19(void);
 void trap_20(void);
 void trap_21(void);
 void trap_32(void);
+void trap_33(void);
+void trap_36(void);
 void trap_48(void);
 
 void
@@ -110,6 +112,8 @@ trap_init(void)
 	SETGATE(idt[T_MCHK], 0, GD_KT, &trap_18, 0);
 	SETGATE(idt[T_SIMDERR], 0, GD_KT, &trap_19, 0);
 	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, &trap_32, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, &trap_33, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, &trap_36, 0);
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, &trap_48, 3);
 
 	// Per-CPU setup
